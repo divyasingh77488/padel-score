@@ -1,9 +1,25 @@
-import { CompletedSet, CurrentGame, MatchScore, MatchSetup, PerTeam, Team, other } from './types';
+import {
+  CompletedSet,
+  CurrentGame,
+  DeuceRule,
+  MatchScore,
+  MatchSetup,
+  PerTeam,
+  Team,
+  other,
+} from './types';
 
 const SETS_TO_WIN = 2;
 const GAMES_PER_SET = 6;
 const TIEBREAK_POINTS = 7;
 const GAME_LABELS = ['0', '15', '30', '40'];
+
+/** At which deuce (1st, 2nd, ...) the next point decides the game, per rule. */
+const DECIDING_DEUCE: Record<DeuceRule, number> = {
+  advantage: Infinity,
+  golden: 1,
+  star: 3,
+};
 
 const zero = (): PerTeam<number> => ({ A: 0, B: 0 });
 
@@ -39,6 +55,8 @@ export function computeScore(setup: MatchSetup, points: readonly Team[]): MatchS
   const setsWon = zero();
   let games = zero();
   let gamePoints = zero();
+  /** How many times the current game has reached 40–40. */
+  let deuces = 0;
   let inTiebreak = false;
   /** Server of the current regular game, or the first server of the current tiebreak. */
   let gameServer: Team = setup.firstServer;
@@ -51,8 +69,12 @@ export function computeScore(setup: MatchSetup, points: readonly Team[]): MatchS
     if (setsWon[team] >= SETS_TO_WIN) winner = team;
   };
 
+  const isDecidingPoint = () =>
+    !inTiebreak && gamePoints.A === gamePoints.B && deuces >= DECIDING_DEUCE[setup.deuceRule];
+
   for (const team of points) {
     if (winner) break;
+    const decides = isDecidingPoint();
     gamePoints[team] += 1;
 
     if (inTiebreak) {
@@ -67,9 +89,12 @@ export function computeScore(setup: MatchSetup, points: readonly Team[]): MatchS
       continue;
     }
 
-    if (hasWon(gamePoints, team, 4)) {
+    if (gamePoints.A >= 3 && gamePoints.A === gamePoints.B) deuces += 1;
+
+    if (decides || hasWon(gamePoints, team, 4)) {
       games[team] += 1;
       gamePoints = zero();
+      deuces = 0;
       gameServer = other(gameServer);
       if (hasWon(games, team, GAMES_PER_SET)) {
         winSet(team);
@@ -83,9 +108,15 @@ export function computeScore(setup: MatchSetup, points: readonly Team[]): MatchS
     ? { kind: 'tiebreak', A: gamePoints.A, B: gamePoints.B }
     : { kind: 'regular', display: regularDisplay(gamePoints) };
 
-  const server = inTiebreak
-    ? tiebreakServer(gameServer, gamePoints.A + gamePoints.B)
-    : gameServer;
+  const server = inTiebreak ? tiebreakServer(gameServer, gamePoints.A + gamePoints.B) : gameServer;
 
-  return { completedSets, currentSet: games, currentGame, server, setsWon, winner };
+  return {
+    completedSets,
+    currentSet: games,
+    currentGame,
+    server,
+    decidingPoint: winner === null && isDecidingPoint(),
+    setsWon,
+    winner,
+  };
 }

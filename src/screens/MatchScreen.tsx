@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MatchScore, MatchSetup, Team } from '../scoring';
 import { MatchOverOverlay } from './MatchOverOverlay';
+import { DEUCE_RULE_INFO } from './deuceRules';
 import { colors } from './theme';
 
 type Props = {
@@ -59,6 +60,11 @@ export function MatchScreen({ setup, score, canUndo, onPoint, onUndo, onNewMatch
         {pointsText(team)}
       </Text>
       {score.currentGame.kind === 'tiebreak' && <Text style={styles.tiebreak}>Tiebreak</Text>}
+      {score.decidingPoint && (
+        <Text style={styles.tiebreak}>
+          {DEUCE_RULE_INFO[setup.deuceRule].label}: next point wins
+        </Text>
+      )}
     </Pressable>
   );
 
@@ -68,7 +74,10 @@ export function MatchScreen({ setup, score, canUndo, onPoint, onUndo, onNewMatch
         {setup.teamNames[team]}
       </Text>
       {score.completedSets.map((set, i) => (
-        <Text key={i} style={[styles.boardCell, set[team] > set[team === 'A' ? 'B' : 'A'] && styles.boardWon]}>
+        <Text
+          key={i}
+          style={[styles.boardCell, set[team] > set[team === 'A' ? 'B' : 'A'] && styles.boardWon]}
+        >
           {set[team]}
           {set.tiebreak && <Text style={styles.boardTiebreak}>{set.tiebreak[team]}</Text>}
         </Text>

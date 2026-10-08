@@ -71,6 +71,12 @@ Everything from here on happens on the iPhone.
 
 - **Team names:** type a name for each team, or leave them blank to use "Team A" and "Team B".
 - **Serves first:** tap the team that serves the first game.
+- **At 40–40:** choose how a game is decided from deuce (default **Golden**). Tap the **ⓘ**
+  button to read what each option means:
+  - **Advantage:** a team must win two points in a row. Can go on for a long time.
+  - **Golden:** the next point wins the game.
+  - **Star:** advantage at the first two deuces; at the third deuce the next point wins
+    (the official FIP rule).
 - Tap **Start match**.
 
 ### 2. Score each point
@@ -80,8 +86,12 @@ the second team.
 
 - **After each rally, tap anywhere on the half of the team that won the point.** The whole half
   is a button, so you don't need to aim.
-- The big number is the score in the current game: `0`, `15`, `30`, `40`. At 40–40 (deuce) the
-  team that wins the next point shows `AD`; if they lose the next point it goes back to `40–40`.
+- The big number is the score in the current game: `0`, `15`, `30`, `40`. What happens at
+  40–40 depends on the rule you picked:
+  - with advantage (and the first two deuces of star point), the team that wins the next point
+    shows `AD`; if they lose the next point it goes back to `40–40`;
+  - when the next point decides the game (golden point, or the third deuce of star point), the
+    screen says **"Golden point: next point wins"** or **"Star point: next point wins"**.
 - The **yellow ball** next to a team's name shows which team is serving. It moves automatically.
 - The bar in the middle shows the **games** for each team:
   - the yellow number is the set being played now;
@@ -121,7 +131,8 @@ back exactly where you left it when you open the app again.
 
 ## Scoring rules
 
-- Games: 0, 15, 30, 40, game. Advantage at deuce (no golden point).
+- Games: 0, 15, 30, 40, game. At 40–40, the rule chosen at setup: advantage, golden point or
+  star point (see above). Tiebreaks always play to 7, win by 2.
 - Sets: first to 6 games with a 2-game lead (6–4, 7–5). Tiebreak at 6–6.
 - Tiebreak: first to 7 points with a 2-point lead (7–5, 10–8).
 - Match: best of 3 sets.

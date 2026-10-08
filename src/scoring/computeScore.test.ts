@@ -1,7 +1,11 @@
 import { computeScore } from './computeScore';
 import { MatchSetup, Team } from './types';
 
-const setup: MatchSetup = { teamNames: { A: 'Team A', B: 'Team B' }, firstServer: 'A' };
+const setup: MatchSetup = {
+  teamNames: { A: 'Team A', B: 'Team B' },
+  firstServer: 'A',
+  deuceRule: 'advantage',
+};
 
 const rep = (team: Team, n: number): Team[] => Array(n).fill(team);
 /** Points for one game won to love by `team`. */
@@ -264,5 +268,72 @@ describe('undo (dropping the last point)', () => {
     const s = computeScore(setup, pts.slice(0, -1));
     expect(s.currentGame).toEqual({ kind: 'tiebreak', A: 6, B: 0 });
     expect(s.completedSets).toEqual([]);
+  });
+});
+
+describe('deuce rules', () => {
+  const deuce: Team[] = ['A', 'A', 'A', 'B', 'B', 'B'];
+  const golden: MatchSetup = { ...setup, deuceRule: 'golden' };
+  const star: MatchSetup = { ...setup, deuceRule: 'star' };
+
+  it('advantage never marks a deciding point', () => {
+    const long = [...deuce, 'A', 'B', 'B', 'A', 'A', 'B'] as Team[];
+    expect(computeScore(setup, long).decidingPoint).toBe(false);
+  });
+
+  it('golden point: the point after 40–40 wins the game', () => {
+    expect(computeScore(golden, ['A', 'A', 'B']).decidingPoint).toBe(false);
+    const atDeuce = computeScore(golden, deuce);
+    expect(atDeuce.currentGame).toEqual({ kind: 'regular', display: { A: '40', B: '40' } });
+    expect(atDeuce.decidingPoint).toBe(true);
+    const s = computeScore(golden, [...deuce, 'B']);
+    expect(s.currentSet).toEqual({ A: 0, B: 1 });
+    expect(s.decidingPoint).toBe(false);
+    expect(s.server).toBe('B');
+  });
+
+  it('golden point: a normal win from 40–30 still counts', () => {
+    expect(computeScore(golden, ['A', 'A', 'A', 'B', 'B', 'A']).currentSet).toEqual({ A: 1, B: 0 });
+  });
+
+  it('star point: advantage at the first two deuces, deciding point at the third', () => {
+    // First deuce: advantage.
+    expect(computeScore(star, deuce).decidingPoint).toBe(false);
+    expect(computeScore(star, [...deuce, 'A']).currentGame).toEqual({
+      kind: 'regular',
+      display: { A: 'AD', B: '40' },
+    });
+    // Second deuce: still advantage.
+    const second = [...deuce, 'A', 'B'] as Team[];
+    expect(computeScore(star, second).decidingPoint).toBe(false);
+    expect(computeScore(star, [...second, 'B']).currentGame).toEqual({
+      kind: 'regular',
+      display: { A: '40', B: 'AD' },
+    });
+    // Third deuce: the next point decides.
+    const third = [...second, 'B', 'A'] as Team[];
+    const s = computeScore(star, third);
+    expect(s.currentGame).toEqual({ kind: 'regular', display: { A: '40', B: '40' } });
+    expect(s.decidingPoint).toBe(true);
+    expect(computeScore(star, [...third, 'A']).currentSet).toEqual({ A: 1, B: 0 });
+  });
+
+  it('star point: winning from advantage ends the game as usual', () => {
+    expect(computeScore(star, [...deuce, 'B', 'B']).currentSet).toEqual({ A: 0, B: 1 });
+  });
+
+  it('star point: the deuce count resets every game', () => {
+    const starGame = [...deuce, 'A', 'B', 'B', 'A', 'A'] as Team[]; // A wins at the third deuce
+    const s = computeScore(star, [...starGame, ...deuce]);
+    expect(s.currentSet).toEqual({ A: 1, B: 0 });
+    expect(s.decidingPoint).toBe(false);
+  });
+
+  it('does not apply to tiebreaks', () => {
+    const tb = [...toSixAll(), ...rep('A', 6), ...rep('B', 6)] as Team[];
+    const s = computeScore(golden, tb);
+    expect(s.currentGame).toEqual({ kind: 'tiebreak', A: 6, B: 6 });
+    expect(s.decidingPoint).toBe(false);
+    expect(computeScore(golden, [...tb, 'A']).completedSets).toEqual([]);
   });
 });

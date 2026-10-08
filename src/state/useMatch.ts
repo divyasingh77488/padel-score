@@ -42,7 +42,10 @@ export function useMatch(): UseMatch {
   useEffect(() => {
     if (!loaded) return;
     const write = state.setup
-      ? AsyncStorage.setItem(STORAGE_KEY, serializeMatch({ setup: state.setup, points: state.points }))
+      ? AsyncStorage.setItem(
+          STORAGE_KEY,
+          serializeMatch({ setup: state.setup, points: state.points }),
+        )
       : AsyncStorage.removeItem(STORAGE_KEY);
     write.catch(() => {
       // Nothing useful to do; the match continues in memory.

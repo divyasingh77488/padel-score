@@ -1,13 +1,23 @@
 import { parseSavedMatch, serializeMatch } from './storage';
 
 const match = {
-  setup: { teamNames: { A: 'Us', B: 'Them' }, firstServer: 'B' as const },
+  setup: {
+    teamNames: { A: 'Us', B: 'Them' },
+    firstServer: 'B' as const,
+    deuceRule: 'star' as const,
+  },
   points: ['A', 'B', 'A'] as ('A' | 'B')[],
 };
 
 describe('parseSavedMatch', () => {
   it('round-trips a saved match', () => {
     expect(parseSavedMatch(serializeMatch(match))).toEqual(match);
+  });
+
+  it('treats matches saved without a deuce rule as advantage', () => {
+    const { deuceRule, ...oldSetup } = match.setup;
+    const raw = JSON.stringify({ version: 1, setup: oldSetup, points: match.points });
+    expect(parseSavedMatch(raw)?.setup.deuceRule).toBe('advantage');
   });
 
   it('returns null for missing data', () => {
@@ -33,6 +43,9 @@ describe('parseSavedMatch', () => {
     ).toBeNull();
     expect(
       parseSavedMatch(JSON.stringify({ ...v, setup: { ...match.setup, teamNames: { A: 'x' } } })),
+    ).toBeNull();
+    expect(
+      parseSavedMatch(JSON.stringify({ ...v, setup: { ...match.setup, deuceRule: 'silver' } })),
     ).toBeNull();
     expect(parseSavedMatch(JSON.stringify({ ...v, points: 'AB' }))).toBeNull();
     expect(parseSavedMatch(JSON.stringify({ ...v, points: ['A', 'X'] }))).toBeNull();
