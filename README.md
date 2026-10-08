@@ -11,36 +11,51 @@ Design: [docs/superpowers/specs/2026-10-08-padel-score-design.md](docs/superpowe
   <img src="docs/screenshots/match-over.png" width="200" alt="Match over">
 </p>
 
-## Install on your iPhone
+## Getting the app onto your iPhone
 
-You need a Mac (or any computer) with [Node.js](https://nodejs.org) installed, and an iPhone on
-the **same Wi-Fi network**.
+The app runs inside **Expo Go** on the iPhone, and Expo Go loads it from your Mac. So there are
+two parts: the Mac serves the app, the iPhone runs it.
 
-1. On the iPhone, install **Expo Go** from the App Store.
-2. On the computer, get the code and start the app server:
+### On your Mac — one-time setup
+
+You need [Node.js](https://nodejs.org) installed.
+
+```bash
+git clone https://github.com/divyasingh77488/padel-score.git
+cd padel-score
+npm install
+```
+
+### On your iPhone — one-time setup
+
+Install **Expo Go** from the App Store.
+
+### Each time you want to load the app
+
+1. **On your Mac:** in the `padel-score` folder, run
    ```bash
-   git clone https://github.com/divyasingh77488/padel-score.git
-   cd padel-score
-   npm install
    npm start
    ```
-   A QR code appears in the terminal.
-3. On the iPhone, open the **Camera** app, point it at the QR code and tap the banner. The app
-   opens in Expo Go.
+   A QR code appears in the terminal. Leave this running.
+2. **On your iPhone:** make sure it's on the **same Wi-Fi** as the Mac. Open the **Camera** app,
+   point it at the QR code and tap the banner. The app opens in Expo Go. (After the first time,
+   you can also open it from **Recently opened** in Expo Go, as long as the Mac is running
+   `npm start`.)
 
-Next time, just run `npm start` in the `padel-score` folder and scan the QR code again. Expo Go
-also lists the app under **Recently opened**.
+If the iPhone can't reach the Mac (for example on office or hotel Wi-Fi), run
+`npx expo start --tunnel` on the Mac instead of `npm start`.
 
-> **Before you go to the court:** Expo Go loads the app from your computer. Open the app at home,
-> then keep it open. Locking the phone or switching to another app is fine. If the app gets
-> fully closed (swiped away) while you're away from the computer, Expo Go can't load it again
-> until you're back on the same Wi-Fi as a computer running `npm start`. Your match isn't
-> lost: it's saved on the phone and comes back when the app reopens.
->
-> If the phone can't reach the computer (for example on office or hotel Wi-Fi), use
-> `npx expo start --tunnel` instead of `npm start`.
+### Before you go to the court
 
-## How to use it
+Once the app is open on the iPhone, you don't need the Mac any more, **as long as the app stays
+open**. Locking the iPhone or switching to another app is fine. If the app is fully closed
+(swiped away) while you're away from the Mac, Expo Go can't load it again until you're back
+with the Mac running `npm start`. Your match isn't lost: it's saved on the iPhone and comes back
+when the app reopens.
+
+## How to use it (on your iPhone)
+
+Everything from here on happens on the iPhone.
 
 ### 1. Set up the match
 
@@ -91,7 +106,7 @@ discards the match.
 
 ### If the app closes
 
-Every point is saved on the phone. If the app is closed or the phone restarts, the match comes
+Every point is saved on the iPhone. If the app is closed or the iPhone restarts, the match comes
 back exactly where you left it when you open the app again.
 
 ## Scoring rules
@@ -103,7 +118,7 @@ back exactly where you left it when you open the app again.
 - Serve changes every game. In a tiebreak the first server serves 1 point, then teams alternate
   every 2 points. The team that received first in the tiebreak serves first in the next set.
 
-## Development
+## Development (on your Mac)
 
 ```bash
 npm test           # scoring engine + storage unit tests
