@@ -1,5 +1,5 @@
 import { useKeepAwake } from 'expo-keep-awake';
-import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MatchScore, MatchSetup, Team } from '../scoring';
@@ -17,12 +17,7 @@ type Props = {
 };
 
 function confirmNewMatch(onConfirm: () => void) {
-  const message = 'The current match will be lost.';
-  if (Platform.OS === 'web') {
-    if (window.confirm(`Start a new match? ${message}`)) onConfirm();
-    return;
-  }
-  Alert.alert('Start a new match?', message, [
+  Alert.alert('Start a new match?', 'The current match will be lost.', [
     { text: 'Cancel', style: 'cancel' },
     { text: 'New match', style: 'destructive', onPress: onConfirm },
   ]);
