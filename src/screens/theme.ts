@@ -6,6 +6,6 @@ export const colors = {
   text: '#F8FAFC',
   muted: '#94A3B8',
   accent: '#FACC15',
-  team: { A: '#2563EB', B: '#DC2626' } as Record<Team, string>,
-  teamPressed: { A: '#1D4ED8', B: '#B91C1C' } as Record<Team, string>,
+  team: { A: '#0D9488', B: '#9B7BD4' } as Record<Team, string>,
+  teamPressed: { A: '#0F766E', B: '#8262BF' } as Record<Team, string>,
 };

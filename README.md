@@ -75,7 +75,7 @@ Everything from here on happens on the iPhone.
 
 ### 2. Score each point
 
-The screen is split in two: the top half (blue) is the first team and the bottom half (red) is
+The screen is split in two: the top half (teal) is the first team and the bottom half (lilac) is
 the second team.
 
 - **After each rally, tap anywhere on the half of the team that won the point.** The whole half
