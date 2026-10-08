@@ -144,7 +144,6 @@ back exactly where you left it when you open the app again.
 ```bash
 npm test           # scoring engine + storage unit tests
 npm run typecheck
-npm run web        # quick check in a browser
 ```
 
 Code layout:

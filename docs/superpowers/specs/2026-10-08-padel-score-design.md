@@ -105,7 +105,7 @@ App.tsx         chooses screen from state
   - points after the end are ignored
   - undo across game and set boundaries
 - Unit tests for persistence parsing (valid, missing, corrupt data).
-- UI checked by hand in Expo Go on iPhone, plus Expo web in a browser for quick checks.
+- UI checked by hand in Expo Go on iPhone.
 
 ## Repository
 
