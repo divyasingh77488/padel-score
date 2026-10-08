@@ -16,6 +16,9 @@ Design: [docs/superpowers/specs/2026-10-08-padel-score-design.md](docs/superpowe
 The app runs inside **Expo Go** on the iPhone, and Expo Go loads it from your Mac. So there are
 two parts: the Mac serves the app, the iPhone runs it.
 
+You also need a free **Expo account**: Expo Go only opens projects when the Mac and the iPhone
+are signed in to the same account. Create one at [expo.dev/signup](https://expo.dev/signup).
+
 ### On your Mac — one-time setup
 
 You need [Node.js](https://nodejs.org) installed.
@@ -24,11 +27,13 @@ You need [Node.js](https://nodejs.org) installed.
 git clone https://github.com/divyasingh77488/padel-score.git
 cd padel-score
 npm install
+npx expo login      # sign in with your Expo account
 ```
 
 ### On your iPhone — one-time setup
 
-Install **Expo Go** from the App Store.
+1. Install **Expo Go** from the App Store.
+2. Open Expo Go and sign in with the **same Expo account** you used on the Mac.
 
 ### Each time you want to load the app
 
@@ -42,8 +47,13 @@ Install **Expo Go** from the App Store.
    you can also open it from **Recently opened** in Expo Go, as long as the Mac is running
    `npm start`.)
 
-If the iPhone can't reach the Mac (for example on office or hotel Wi-Fi), run
-`npx expo start --tunnel` on the Mac instead of `npm start`.
+### If it doesn't open
+
+- **"You need to be signed in to Expo Go and Expo CLI"**: run `npx expo login` on the Mac, sign
+  in to Expo Go on the iPhone with the same account, then stop `npm start` (Ctrl+C), run it
+  again and scan the new QR code. `npx expo whoami` on the Mac shows which account it's using.
+- **It can't connect / keeps loading**: the iPhone can't reach the Mac (for example on office or
+  hotel Wi-Fi). Run `npx expo start --tunnel` on the Mac instead of `npm start`.
 
 ### Before you go to the court
 
