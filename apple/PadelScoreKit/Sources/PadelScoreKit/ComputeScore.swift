@@ -120,3 +120,25 @@ public func formatSets(_ sets: [CompletedSet], from team: Team) -> String {
   }
   .joined(separator: "  ")
 }
+
+/// The score so far from `team`'s point of view: finished sets, then the games of the set in
+/// progress when the match isn't over, e.g. `6–4  3–2`.
+public func formatScore(_ score: MatchScore, from team: Team) -> String {
+  var text = formatSets(score.completedSets, from: team)
+  let games = score.currentSet
+  if score.winner == nil && games.a + games.b > 0 {
+    let current = "\(games[team])–\(games[team.other])"
+    text = text.isEmpty ? current : "\(text)  \(current)"
+  }
+  return text
+}
+
+/// The team ahead: the winner, else more sets, else more games in the current set. Nil if level.
+public func leader(_ score: MatchScore) -> Team? {
+  if let winner = score.winner { return winner }
+  if score.setsWon.a != score.setsWon.b { return score.setsWon.a > score.setsWon.b ? .a : .b }
+  if score.currentSet.a != score.currentSet.b {
+    return score.currentSet.a > score.currentSet.b ? .a : .b
+  }
+  return nil
+}

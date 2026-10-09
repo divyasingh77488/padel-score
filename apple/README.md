@@ -6,8 +6,10 @@ Native iPhone and Apple Watch apps that work together:
    and tap **Send to watch**. The watch holds one match at a time; sending another replaces it.
 2. **On the watch**, open Padel Battle: the match is shown under **From your phone**. Tap it to
    start, then tap the top or bottom half to score. Nothing is sent while you play.
-3. **When the match ends**, tap **New match** on the watch: the result is sent to the iPhone's
-   **History** (straight away if the phone is near, otherwise the next time they're together).
+3. **When you stop playing**, tap **✕** on the watch → **End match** (or finish the match), then
+   **Sync to phone**: the score so far goes to the iPhone's **History**, straight away if the
+   phone is near, otherwise the next time they're together. Matches don't have to be finished;
+   one or two sets in an hour is fine. **Don't sync** discards it; **Resume** goes back to it.
 
 The watch still works on its own: you can set up a match on the watch itself. The iPhone can also
 score a match by itself: **Play on phone**.

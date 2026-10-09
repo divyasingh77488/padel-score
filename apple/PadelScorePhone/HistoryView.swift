@@ -34,6 +34,12 @@ struct HistoryView: View {
 private struct HistoryRow: View {
   let record: MatchRecord
 
+  /// Finished: from the winner's side. Ended early: from team A's side (as "Team A vs Team B").
+  private func scoreText(_ score: MatchScore) -> String {
+    let text = formatScore(score, from: score.winner ?? .a)
+    return text.isEmpty ? "No games yet" : text
+  }
+
   var body: some View {
     let score = record.score
     VStack(alignment: .leading, spacing: 4) {
@@ -44,15 +50,17 @@ private struct HistoryRow: View {
         Text(record.setup.teamNames[winner]).foregroundStyle(Theme.color(winner))
           + Text(" beat ").foregroundStyle(.secondary)
           + Text(record.setup.teamNames[winner.other]).foregroundStyle(Theme.color(winner.other))
-        HStack {
-          Text(formatSets(score.completedSets, from: winner))
-            .font(.title3.weight(.bold))
-            .monospacedDigit()
-          Spacer()
-          Text(record.setup.deuceRule.label)
-            .font(.caption)
-            .foregroundStyle(.secondary)
-        }
+      } else {
+        TeamsText(names: record.setup.teamNames)
+      }
+      HStack {
+        Text(scoreText(score))
+          .font(.title3.weight(.bold))
+          .monospacedDigit()
+        Spacer()
+        Text(score.winner == nil ? "Ended early · \(record.setup.deuceRule.label)" : record.setup.deuceRule.label)
+          .font(.caption)
+          .foregroundStyle(.secondary)
       }
     }
     .font(.headline)

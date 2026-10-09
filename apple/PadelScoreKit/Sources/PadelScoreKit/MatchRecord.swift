@@ -40,10 +40,11 @@ public struct MatchRecord: Codable, Equatable, Identifiable, Sendable {
 public enum MatchHistory {
   public static let maxEntries = 200
 
-  /// Adds a finished match to the front of the history, replacing any entry with the same id.
-  /// Unfinished matches are ignored.
+  /// Adds a match to the front of the history, replacing any entry with the same id. Matches
+  /// ended early are kept too (games are often stopped when the court time runs out); a match
+  /// with no points played is ignored.
   public static func adding(_ record: MatchRecord, to history: [MatchRecord]) -> [MatchRecord] {
-    guard record.score.winner != nil else { return history }
+    guard !record.points.isEmpty else { return history }
     var entry = record
     if entry.finishedAt == nil { entry.finishedAt = Date() }
     let rest = history.filter { $0.id != record.id }

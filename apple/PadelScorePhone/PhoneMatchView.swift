@@ -19,18 +19,21 @@ struct PhoneMatchView: View {
         if let winner = score.winner {
           MatchOverCard(
             record: record, score: score, winner: winner,
-            onDone: { store.leaveMatch() },
+            onSave: { store.leaveMatch(save: true) },
+            onDiscard: { store.leaveMatch(save: false) },
             onUndo: { store.undo() })
         }
       }
       .background(Color.black)
       .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
       .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
-      .alert("Leave this match?", isPresented: $confirmLeave) {
-        Button("Leave", role: .destructive) { store.leaveMatch() }
+      .confirmationDialog("End this match?", isPresented: $confirmLeave, titleVisibility: .visible) {
+        Button("Save to history") { store.leaveMatch(save: true) }
+          .disabled(record.points.isEmpty)
+        Button("Discard", role: .destructive) { store.leaveMatch(save: false) }
         Button("Cancel", role: .cancel) {}
       } message: {
-        Text("Unfinished matches aren't saved.")
+        Text("Save the score so far to your history, or discard it.")
       }
     }
   }
@@ -125,7 +128,8 @@ private struct MatchOverCard: View {
   let record: MatchRecord
   let score: MatchScore
   let winner: Team
-  let onDone: () -> Void
+  let onSave: () -> Void
+  let onDiscard: () -> Void
   let onUndo: () -> Void
 
   var body: some View {
@@ -140,14 +144,18 @@ private struct MatchOverCard: View {
           .font(.title.weight(.bold))
           .monospacedDigit()
         Button {
-          onDone()
+          onSave()
         } label: {
-          Text("Save & new match").font(.headline).frame(maxWidth: .infinity)
+          Text("Save to history").font(.headline).frame(maxWidth: .infinity)
         }
         .buttonStyle(.borderedProminent)
         .tint(Theme.accent)
         .foregroundStyle(.black)
-        Button("Undo last point", action: onUndo)
+        HStack {
+          Button("Undo last point", action: onUndo)
+          Spacer()
+          Button("Discard", role: .destructive, action: onDiscard)
+        }
       }
       .padding(24)
       .background(RoundedRectangle(cornerRadius: 20).fill(Color(white: 0.12)))

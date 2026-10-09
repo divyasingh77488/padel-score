@@ -89,9 +89,9 @@ final class PhoneStore: ObservableObject {
     saveCurrent()
   }
 
-  /// Leaves the phone match; a finished one goes into the history.
-  func leaveMatch() {
-    if let record = current {
+  /// Leaves the phone match, saving it to the history (finished or not) when `save` is true.
+  func leaveMatch(save: Bool) {
+    if save, let record = current {
       history = MatchHistory.adding(record, to: history)
       saveHistory()
     }

@@ -72,7 +72,9 @@ final class MatchModel: ObservableObject {
   }
 
   func addPoint(_ team: Team) {
-    guard var record = current, record.score.winner == nil else { return }
+    guard var record = current, record.finishedAt == nil, record.score.winner == nil else {
+      return
+    }
     record.points.append(team)
     current = record
     saveCurrent()
@@ -81,18 +83,47 @@ final class MatchModel: ObservableObject {
   func undo() {
     guard var record = current, !record.points.isEmpty else { return }
     record.points.removeLast()
+    record.finishedAt = nil
     current = record
     saveCurrent()
   }
 
-  /// Leaves the current match. A finished match is sent to the phone's history.
-  func newMatch() {
-    if var record = current, record.score.winner != nil {
-      record.finishedAt = Date()
+  /// True when the match is over: won, or ended early from the ✕ button.
+  var isOver: Bool {
+    guard let current else { return false }
+    return current.finishedAt != nil || current.score.winner != nil
+  }
+
+  /// Ends the match before it's won (court time over). It can still be resumed or synced.
+  func endMatch() {
+    guard var record = current, record.finishedAt == nil else { return }
+    record.finishedAt = Date()
+    current = record
+    saveCurrent()
+  }
+
+  /// Goes back to a match ended early by mistake.
+  func resume() {
+    guard var record = current else { return }
+    record.finishedAt = nil
+    current = record
+    saveCurrent()
+  }
+
+  /// Sends the match to the phone's history and clears it from the watch.
+  func syncToPhone() {
+    if var record = current, !record.points.isEmpty {
+      if record.finishedAt == nil { record.finishedAt = Date() }
       outbox = Array(([record] + outbox.filter { $0.id != record.id }).prefix(Self.outboxSize))
       defaults.set(SyncCoding.encode(outbox), forKey: Self.outboxKey)
       sync.sendFinishedMatches(outbox)
     }
+    current = nil
+    saveCurrent()
+  }
+
+  /// Clears the match without sending it to the phone.
+  func discard() {
     current = nil
     saveCurrent()
   }

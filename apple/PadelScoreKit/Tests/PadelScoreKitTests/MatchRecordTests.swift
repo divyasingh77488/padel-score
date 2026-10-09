@@ -16,9 +16,33 @@ final class MatchRecordTests: XCTestCase {
     XCTAssertNotNil(history[0].finishedAt)
   }
 
-  func testHistoryIgnoresUnfinishedMatch() {
-    let match = MatchRecord(setup: setup, points: [.a, .b])
-    XCTAssertEqual(MatchHistory.adding(match, to: []), [])
+  func testHistoryKeepsMatchEndedEarly() {
+    let match = MatchRecord(setup: setup, points: [.a, .b], finishedAt: Date())
+    XCTAssertEqual(MatchHistory.adding(match, to: []).map(\.id), [match.id])
+  }
+
+  func testHistoryIgnoresMatchWithNoPoints() {
+    XCTAssertEqual(MatchHistory.adding(MatchRecord(setup: setup), to: []), [])
+  }
+
+  func testFormatScoreIncludesSetInProgress() {
+    // 6–0 to A, then 2–1 in games in the second set.
+    let points = Array(repeating: Team.a, count: 24) + Array(repeating: .a, count: 8)
+      + Array(repeating: .b, count: 4)
+    let score = computeScore(setup, points)
+    XCTAssertEqual(formatScore(score, from: .a), "6–0  2–1")
+    XCTAssertEqual(formatScore(score, from: .b), "0–6  1–2")
+    XCTAssertEqual(leader(score), .a)
+  }
+
+  func testFormatScoreOfFinishedMatchIsJustTheSets() {
+    let score = computeScore(setup, finishedPoints)
+    XCTAssertEqual(formatScore(score, from: .a), "6–0  6–0")
+  }
+
+  func testLeaderIsNilWhenLevel() {
+    XCTAssertNil(leader(computeScore(setup, [.a, .b])))
+    XCTAssertEqual(formatScore(computeScore(setup, [.a, .b]), from: .a), "")
   }
 
   func testHistoryReplacesSameMatchInsteadOfDuplicating() {

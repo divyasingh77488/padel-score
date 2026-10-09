@@ -7,8 +7,8 @@ struct PadelScoreApp: App {
   var body: some Scene {
     WindowGroup {
       NavigationStack {
-        if let setup = model.setup, let score = model.score {
-          MatchView(model: model, setup: setup, score: score)
+        if let record = model.current {
+          MatchView(model: model, record: record)
         } else {
           SetupView(model: model)
         }

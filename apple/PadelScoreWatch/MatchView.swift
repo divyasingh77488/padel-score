@@ -4,49 +4,55 @@ import WatchKit
 
 struct MatchView: View {
   @ObservedObject var model: MatchModel
+  let record: MatchRecord
   let setup: MatchSetup
   let score: MatchScore
 
-  @State private var confirmNewMatch = false
+  @State private var confirmEnd = false
+
+  init(model: MatchModel, record: MatchRecord) {
+    self.model = model
+    self.record = record
+    self.setup = record.setup
+    self.score = record.score
+  }
 
   var body: some View {
-    Group {
-      if let winner = score.winner {
-        MatchOverView(model: model, setup: setup, score: score, winner: winner)
-      } else {
-        VStack(spacing: 0) {
-          half(.a)
-          scoreStrip
-          half(.b)
+    if model.isOver {
+      MatchSummaryView(model: model, record: record, score: score)
+    } else {
+      VStack(spacing: 0) {
+        half(.a)
+        scoreStrip
+        half(.b)
+      }
+      .ignoresSafeArea(edges: .bottom)
+      .toolbar {
+        ToolbarItem(placement: .topBarLeading) {
+          Button {
+            model.undo()
+            WKInterfaceDevice.current().play(.directionDown)
+          } label: {
+            Image(systemName: "arrow.uturn.backward")
+          }
+          .disabled(record.points.isEmpty)
+          .accessibilityLabel("Undo")
         }
-        .ignoresSafeArea(edges: .bottom)
-        .toolbar {
-          ToolbarItem(placement: .topBarLeading) {
-            Button {
-              model.undo()
-              WKInterfaceDevice.current().play(.directionDown)
-            } label: {
-              Image(systemName: "arrow.uturn.backward")
-            }
-            .disabled(model.points.isEmpty)
-            .accessibilityLabel("Undo")
+        ToolbarItem(placement: .topBarTrailing) {
+          Button {
+            confirmEnd = true
+          } label: {
+            Image(systemName: "xmark")
           }
-          ToolbarItem(placement: .topBarTrailing) {
-            Button {
-              confirmNewMatch = true
-            } label: {
-              Image(systemName: "xmark")
-            }
-            .accessibilityLabel("New match")
-          }
+          .accessibilityLabel("End match")
         }
       }
-    }
-    .alert("Start a new match?", isPresented: $confirmNewMatch) {
-      Button("New match", role: .destructive) { model.newMatch() }
-      Button("Cancel", role: .cancel) {}
-    } message: {
-      Text("The current match will be lost.")
+      .confirmationDialog("End this match?", isPresented: $confirmEnd) {
+        Button("End match") { model.endMatch() }
+        Button("Cancel", role: .cancel) {}
+      } message: {
+        Text("You can sync the score so far to your phone.")
+      }
     }
   }
 
@@ -130,26 +136,63 @@ struct MatchView: View {
   }
 }
 
-struct MatchOverView: View {
+/// Shown when a match is won or ended early: the result, then sync it to the phone or not.
+struct MatchSummaryView: View {
   @ObservedObject var model: MatchModel
-  let setup: MatchSetup
+  let record: MatchRecord
   let score: MatchScore
-  let winner: Team
+
+  @State private var confirmDiscard = false
 
   var body: some View {
+    let ahead = leader(score)
     ScrollView {
       VStack(spacing: 8) {
-        Text("Winner").font(.caption).foregroundStyle(.secondary)
-        Text(setup.teamNames[winner])
-          .font(.title3.weight(.bold))
-          .foregroundStyle(Theme.color(winner))
-        Text(formatSets(score.completedSets, from: winner))
-          .font(.headline)
-          .monospacedDigit()
-        Button("New match") { model.newMatch() }
-          .tint(Theme.accent)
-        Button("Undo last point") { model.undo() }
+        if let winner = score.winner {
+          Text("Winner").font(.caption).foregroundStyle(.secondary)
+          Text(record.setup.teamNames[winner])
+            .font(.title3.weight(.bold))
+            .foregroundStyle(Theme.color(winner))
+        } else {
+          Text("Match ended").font(.caption).foregroundStyle(.secondary)
+          if let ahead {
+            Text("\(record.setup.teamNames[ahead]) ahead")
+              .font(.title3.weight(.bold))
+              .foregroundStyle(Theme.color(ahead))
+          } else {
+            Text("Level").font(.title3.weight(.bold))
+          }
+        }
+        let summary = formatScore(score, from: ahead ?? .a)
+        if !summary.isEmpty {
+          Text(summary)
+            .font(.headline)
+            .monospacedDigit()
+        }
+
+        Button {
+          model.syncToPhone()
+          WKInterfaceDevice.current().play(.success)
+        } label: {
+          Label("Sync to phone", systemImage: "iphone")
+        }
+        .tint(Theme.accent)
+        .disabled(record.points.isEmpty)
+
+        Button("Don't sync", role: .destructive) { confirmDiscard = true }
+
+        if score.winner != nil {
+          Button("Undo last point") { model.undo() }
+        } else {
+          Button("Resume") { model.resume() }
+        }
       }
+    }
+    .confirmationDialog("Discard this match?", isPresented: $confirmDiscard) {
+      Button("Discard", role: .destructive) { model.discard() }
+      Button("Cancel", role: .cancel) {}
+    } message: {
+      Text("It won't be saved on your phone.")
     }
   }
 }
