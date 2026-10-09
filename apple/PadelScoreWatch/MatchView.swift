@@ -65,6 +65,7 @@ struct MatchView: View {
       ZStack {
         Theme.color(team)
         VStack(spacing: 0) {
+          // Name and serve dot on the left, this team's games in the set on the right.
           HStack(spacing: 4) {
             Text(setup.teamNames[team])
               .font(.footnote.weight(.semibold))
@@ -72,16 +73,27 @@ struct MatchView: View {
             if score.server == team {
               Circle()
                 .fill(Theme.accent)
-                .frame(width: 8, height: 8)
+                .frame(width: 9, height: 9)
                 .accessibilityLabel("Serving")
             }
+            Spacer(minLength: 4)
+            Text("\(score.currentSet[team])")
+              .font(.system(.title3, design: .rounded).weight(.heavy))
+              .monospacedDigit()
+              .foregroundStyle(.black)
+              .padding(.horizontal, 8)
+              .background(Capsule().fill(.white))
+              .accessibilityLabel("\(score.currentSet[team]) games")
           }
+          .padding(.horizontal, 10)
           Text(pointsText(team))
-            .font(.system(size: 44, weight: .heavy, design: .rounded))
+            .font(.system(size: 46, weight: .heavy, design: .rounded))
             .monospacedDigit()
             .minimumScaleFactor(0.5)
             .lineLimit(1)
+            .frame(maxHeight: .infinity)
         }
+        .padding(.vertical, 4)
         .foregroundStyle(.white)
       }
     }
@@ -89,27 +101,30 @@ struct MatchView: View {
     .accessibilityLabel("Point \(setup.teamNames[team])")
   }
 
-  /// Games in the current set, sets won, and the tiebreak / deciding-point label.
-  private var scoreStrip: some View {
-    HStack(spacing: 6) {
-      Text("\(score.currentSet.a)–\(score.currentSet.b)")
-        .font(.caption.weight(.bold))
-        .monospacedDigit()
-        .foregroundStyle(Theme.accent)
-      if !score.completedSets.isEmpty {
-        Text("Sets \(score.setsWon.a)–\(score.setsWon.b)")
-          .font(.caption2)
-          .monospacedDigit()
-      }
-      if case .tiebreak = score.currentGame {
-        Text("Tiebreak").font(.caption2)
-      } else if score.decidingPoint {
-        Text(setup.deuceRule.label).font(.caption2).foregroundStyle(Theme.accent)
-      }
+  /// Which set is being played, sets won, and the tiebreak / deciding-point label.
+  private var statusLine: String {
+    var parts = ["SET \(score.completedSets.count + 1)"]
+    if !score.completedSets.isEmpty {
+      parts.append("Sets \(score.setsWon.a)–\(score.setsWon.b)")
     }
-    .frame(maxWidth: .infinity)
-    .padding(.vertical, 2)
-    .background(.black)
+    if case .tiebreak = score.currentGame {
+      parts.append("Tiebreak")
+    } else if score.decidingPoint {
+      parts.append(setup.deuceRule.label)
+    }
+    return parts.joined(separator: " · ")
+  }
+
+  private var scoreStrip: some View {
+    Text(statusLine)
+      .font(.footnote.weight(.bold))
+      .monospacedDigit()
+      .lineLimit(1)
+      .minimumScaleFactor(0.7)
+      .foregroundStyle(score.decidingPoint ? Theme.accent : .white)
+      .frame(maxWidth: .infinity)
+      .padding(.vertical, 3)
+      .background(.black)
   }
 }
 
