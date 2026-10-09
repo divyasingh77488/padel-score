@@ -1,6 +1,6 @@
-# padel-score
+# Padel Point
 
-Simple padel match scorekeeper for iOS (Expo / React Native, so Android works from the same code).
+Padel Point is a simple padel match scorekeeper for iOS (Expo / React Native, so Android works from the same code).
 
 Design: [docs/superpowers/specs/2026-10-08-padel-score-design.md](docs/superpowers/specs/2026-10-08-padel-score-design.md)
 

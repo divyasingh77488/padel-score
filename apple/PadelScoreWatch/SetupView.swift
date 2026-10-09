@@ -51,7 +51,7 @@ struct SetupView: View {
       .listRowBackground(Theme.accent)
       .foregroundStyle(.black)
     }
-    .navigationTitle("Padel Score")
+    .navigationTitle("Padel Point")
     .onAppear {
       guard !loaded else { return }
       loaded = true

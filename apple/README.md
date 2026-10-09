@@ -1,4 +1,4 @@
-# Padel Score for Apple Watch
+# Padel Point for Apple Watch
 
 A watch-only app: score a match from your wrist, with your phone left in the bag. It works
 offline and saves the match after every point.
@@ -66,4 +66,4 @@ These came up during the first install:
 ## Keep the app on screen during a match
 
 By default the watch goes back to the clock face a couple of minutes after you lower your wrist.
-On the watch: **Settings → General → Return to Clock → Padel Score → After 1 hour**.
+On the watch: **Settings → General → Return to Clock → Padel Point → After 1 hour**.
