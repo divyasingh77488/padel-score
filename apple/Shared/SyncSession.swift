@@ -4,28 +4,26 @@ import WatchConnectivity
 
 /// The link between the phone and the watch (WatchConnectivity). Compiled into both apps.
 ///
-/// - Phone → watch, application context: the matches set up on the phone, ready to start.
-/// - Watch → phone, application context: the match being played on the watch (or none).
-/// - Watch → phone, user info: each finished match, queued until delivered, for the history.
+/// Only two things travel, both as application context (Apple keeps the latest value and delivers
+/// it whenever the other device is in range, including in the simulator):
+/// - Phone → watch: the next match to play, set up on the phone (or none).
+/// - Watch → phone: the most recently finished matches. The phone ignores ones it has already
+///   seen, so re-delivery is harmless and deleted history entries don't come back.
 ///
-/// Application context only keeps the latest value and is delivered whenever the other device is
-/// reachable, so a phone left in a bag simply catches up later.
+/// Nothing is sent while a match is being played; the result syncs when it ends.
 @MainActor
 final class SyncSession: NSObject {
   static let shared = SyncSession()
 
   private enum Key {
-    static let planned = "planned"
-    static let live = "live"
+    static let next = "next"
     static let finished = "finished"
   }
 
-  /// Watch: called with the matches set up on the phone.
-  var onPlannedMatches: (([PlannedMatch]) -> Void)?
-  /// Phone: called with the match being played on the watch, or nil when there is none.
-  var onLiveMatch: ((MatchRecord?) -> Void)?
-  /// Phone: called with each match finished on the watch.
-  var onFinishedMatch: ((MatchRecord) -> Void)?
+  /// Watch: called with the next match set up on the phone, or nil.
+  var onNextMatch: ((PlannedMatch?) -> Void)?
+  /// Phone: called with the watch's recently finished matches.
+  var onFinishedMatches: (([MatchRecord]) -> Void)?
 
   private var pendingContext: [String: Any]?
 
@@ -37,20 +35,14 @@ final class SyncSession: NSObject {
     session.activate()
   }
 
-  /// Phone: tell the watch which matches are ready to start.
-  func sendPlannedMatches(_ planned: [PlannedMatch]) {
-    updateContext([Key.planned: SyncCoding.encode(planned)])
+  /// Phone: the match the watch should offer next (nil to clear it).
+  func sendNextMatch(_ match: PlannedMatch?) {
+    updateContext([Key.next: SyncCoding.encode(match)])
   }
 
-  /// Watch: tell the phone about the match in progress (nil when none).
-  func sendLiveMatch(_ record: MatchRecord?) {
-    updateContext([Key.live: SyncCoding.encode(record)])
-  }
-
-  /// Watch: hand a finished match to the phone's history. Queued until the phone receives it.
-  func sendFinishedMatch(_ record: MatchRecord) {
-    guard let session, session.activationState == .activated else { return }
-    session.transferUserInfo([Key.finished: SyncCoding.encode(record)])
+  /// Watch: the recently finished matches, newest first.
+  func sendFinishedMatches(_ records: [MatchRecord]) {
+    updateContext([Key.finished: SyncCoding.encode(records)])
   }
 
   private func updateContext(_ context: [String: Any]) {
@@ -76,21 +68,13 @@ final class SyncSession: NSObject {
   }
 
   fileprivate func handle(context: [String: Any]) {
-    if let data = context[Key.planned] as? Data,
-      let planned = SyncCoding.decode([PlannedMatch].self, from: data)
-    {
-      onPlannedMatches?(planned)
+    if let data = context[Key.next] as? Data {
+      onNextMatch?(SyncCoding.decode(PlannedMatch.self, from: data))
     }
-    if let data = context[Key.live] as? Data {
-      onLiveMatch?(SyncCoding.decode(MatchRecord.self, from: data))
-    }
-  }
-
-  fileprivate func handle(userInfo: [String: Any]) {
-    if let data = userInfo[Key.finished] as? Data,
-      let record = SyncCoding.decode(MatchRecord.self, from: data)
+    if let data = context[Key.finished] as? Data,
+      let records = SyncCoding.decode([MatchRecord].self, from: data)
     {
-      onFinishedMatch?(record)
+      onFinishedMatches?(records)
     }
   }
 }
@@ -108,11 +92,6 @@ extension SyncSession: WCSessionDelegate {
   ) {
     let context = applicationContext
     Task { @MainActor in self.handle(context: context) }
-  }
-
-  nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
-    let info = userInfo
-    Task { @MainActor in self.handle(userInfo: info) }
   }
 
   #if os(iOS)

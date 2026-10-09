@@ -3,21 +3,21 @@
 Native iPhone and Apple Watch apps that work together:
 
 1. **On the iPhone**, tap **New match**, enter the names, who serves first and the rule at 40–40,
-   and tap **Send to watch**.
-2. **On the watch**, open Padel Battle: the match is listed under **From your phone**. Tap it to
-   start, then tap the top or bottom half to score.
-3. **On the iPhone**, the live score shows under **On your watch** while you play. When you tap
-   **New match** on the watch after the match ends, it goes into the iPhone's **History**.
+   and tap **Send to watch**. The watch holds one match at a time; sending another replaces it.
+2. **On the watch**, open Padel Battle: the match is shown under **From your phone**. Tap it to
+   start, then tap the top or bottom half to score. Nothing is sent while you play.
+3. **When the match ends**, tap **New match** on the watch: the result is sent to the iPhone's
+   **History** (straight away if the phone is near, otherwise the next time they're together).
 
-The watch still works on its own (set up a match on the watch, or keep playing when the phone is
-out of range; it catches up later). The iPhone can also score a match by itself: **Play on
-phone**.
+The watch still works on its own: you can set up a match on the watch itself. The iPhone can also
+score a match by itself: **Play on phone**.
 
 - `PadelScoreKit/` – the scoring rules in Swift (a port of `src/scoring/` in the Expo app),
   match records, history and their tests.
 - `PadelScorePhone/` – the iPhone app (SwiftUI).
 - `PadelScoreWatch/` – the watch app (SwiftUI).
-- `Shared/` – code used by both apps: colours and the phone ↔ watch link (WatchConnectivity).
+- `Shared/` – code used by both apps: colours and the phone ↔ watch link (WatchConnectivity:
+  the next match goes to the watch, finished matches come back).
 - `project.yml` – the Xcode project definition, used by XcodeGen.
 
 ## Run the tests (on your Mac)

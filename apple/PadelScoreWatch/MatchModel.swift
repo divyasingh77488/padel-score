@@ -2,24 +2,28 @@ import Foundation
 import PadelScoreKit
 
 /// Holds the match in progress and saves it after every change, so closing the app or
-/// restarting the watch never loses it. Keeps the phone informed through `SyncSession`.
+/// restarting the watch never loses it. Finished matches are sent to the phone when they end.
 @MainActor
 final class MatchModel: ObservableObject {
   private static let matchKey = "padel-battle/watch-match"
   private static let legacyMatchKey = "padel-score/match"
   private static let lastSetupKey = "padel-score/last-setup"
-  private static let startedKey = "padel-battle/started-planned"
+  private static let startedNextKey = "padel-battle/started-next"
+  private static let outboxKey = "padel-battle/finished-outbox"
+  /// How many recent finished matches are kept for the phone to pick up.
+  private static let outboxSize = 20
 
   @Published private(set) var current: MatchRecord?
-  /// Matches set up on the phone that haven't been started yet.
-  @Published private(set) var planned: [PlannedMatch] = []
+  /// The match set up on the phone, ready to start (nil once started here).
+  @Published private(set) var next: PlannedMatch?
 
   /// The setup of the most recent match, to prefill the setup screen.
   private(set) var lastSetup: MatchSetup
 
-  /// Planned matches already started here, hidden until the phone's list catches up.
-  private var startedPlannedIds: Set<UUID>
-  private var latestFromPhone: [PlannedMatch] = []
+  /// The id of the phone's match already started here, hidden until the phone sends a new one.
+  private var startedNextId: UUID?
+  /// Recently finished matches, newest first, waiting for (or already seen by) the phone.
+  private var outbox: [MatchRecord]
 
   private let defaults: UserDefaults
   private let sync = SyncSession.shared
@@ -38,12 +42,13 @@ final class MatchModel: ObservableObject {
         try? JSONDecoder().decode(MatchSetup.self, from: $0)
       }
       ?? MatchSetup(teamNames: PerTeam(a: "Us", b: "Them"), firstServer: .a, deuceRule: .golden)
-    startedPlannedIds = Set(
-      SyncCoding.decode([UUID].self, from: defaults.data(forKey: Self.startedKey)) ?? [])
+    startedNextId = SyncCoding.decode(UUID.self, from: defaults.data(forKey: Self.startedNextKey))
+    outbox =
+      SyncCoding.decode([MatchRecord].self, from: defaults.data(forKey: Self.outboxKey)) ?? []
 
-    sync.onPlannedMatches = { [weak self] planned in self?.receivePlanned(planned) }
+    sync.onNextMatch = { [weak self] match in self?.receiveNext(match) }
     sync.activate()
-    sync.sendLiveMatch(current)
+    if !outbox.isEmpty { sync.sendFinishedMatches(outbox) }
   }
 
   var setup: MatchSetup? { current?.setup }
@@ -54,15 +59,15 @@ final class MatchModel: ObservableObject {
     current = MatchRecord(id: id, setup: newSetup)
     lastSetup = newSetup
     defaults.set(try? JSONEncoder().encode(newSetup), forKey: Self.lastSetupKey)
-    changed()
+    saveCurrent()
   }
 
-  /// Starts a match that was set up on the phone. It keeps the same id, so the phone can match
-  /// the live score to it and take it off its list.
-  func startPlanned(_ match: PlannedMatch) {
-    startedPlannedIds.insert(match.id)
-    defaults.set(SyncCoding.encode(Array(startedPlannedIds)), forKey: Self.startedKey)
-    refreshPlanned()
+  /// Starts the match set up on the phone. It keeps the same id, so the phone can clear it.
+  func startNext() {
+    guard let match = next else { return }
+    startedNextId = match.id
+    defaults.set(SyncCoding.encode(match.id), forKey: Self.startedNextKey)
+    next = nil
     startMatch(match.setup, id: match.id)
   }
 
@@ -70,46 +75,38 @@ final class MatchModel: ObservableObject {
     guard var record = current, record.score.winner == nil else { return }
     record.points.append(team)
     current = record
-    changed()
+    saveCurrent()
   }
 
   func undo() {
     guard var record = current, !record.points.isEmpty else { return }
     record.points.removeLast()
     current = record
-    changed()
+    saveCurrent()
   }
 
   /// Leaves the current match. A finished match is sent to the phone's history.
   func newMatch() {
     if var record = current, record.score.winner != nil {
       record.finishedAt = Date()
-      sync.sendFinishedMatch(record)
+      outbox = Array(([record] + outbox.filter { $0.id != record.id }).prefix(Self.outboxSize))
+      defaults.set(SyncCoding.encode(outbox), forKey: Self.outboxKey)
+      sync.sendFinishedMatches(outbox)
     }
     current = nil
-    changed()
+    saveCurrent()
   }
 
-  private func changed() {
+  private func saveCurrent() {
     if let current {
       defaults.set(SyncCoding.encode(current), forKey: Self.matchKey)
     } else {
       defaults.removeObject(forKey: Self.matchKey)
     }
     defaults.removeObject(forKey: Self.legacyMatchKey)
-    sync.sendLiveMatch(current)
   }
 
-  private func receivePlanned(_ fromPhone: [PlannedMatch]) {
-    latestFromPhone = fromPhone
-    // Forget started ids the phone has already removed from its list.
-    let phoneIds = Set(fromPhone.map(\.id))
-    startedPlannedIds.formIntersection(phoneIds)
-    defaults.set(SyncCoding.encode(Array(startedPlannedIds)), forKey: Self.startedKey)
-    refreshPlanned()
-  }
-
-  private func refreshPlanned() {
-    planned = latestFromPhone.filter { !startedPlannedIds.contains($0.id) }
+  private func receiveNext(_ match: PlannedMatch?) {
+    next = match?.id == startedNextId ? nil : match
   }
 }
