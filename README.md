@@ -155,6 +155,14 @@ When a team wins two sets the match is over and a summary shows:
 To abandon a match before it ends, tap **New** in the middle bar. The app asks before it
 discards the match.
 
+### 6. Match history
+
+Tap **History** at the top of the setup screen to see your finished matches, newest first: the
+date, who won, the final score and the rule at 40–40. A match is saved there when you tap
+**New match** after it ends (so a last-second **Undo** never saves a wrong result); matches you
+abandon with **New** are not saved. Long-press a match to delete it, or tap **Clear** to delete
+them all. History is kept on the iPhone only.
+
 ### If the app closes
 
 Every point is saved on the iPhone. If the app is closed or the iPhone restarts, the match comes

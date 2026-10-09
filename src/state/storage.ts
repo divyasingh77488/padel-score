@@ -40,8 +40,15 @@ export function parseSavedMatch(raw: string | null): SavedMatch | null {
     return null;
   }
   if (typeof data !== 'object' || data === null) return null;
+  if ((data as Record<string, unknown>).version !== 1) return null;
+  return parseMatchFields(data);
+}
+
+/** Validates the `setup` and `points` fields of a stored object. Returns null if invalid. */
+export function parseMatchFields(data: unknown): SavedMatch | null {
+  if (typeof data !== 'object' || data === null) return null;
   const d = data as Record<string, unknown>;
-  if (d.version !== 1 || !isSetup(d.setup)) return null;
+  if (!isSetup(d.setup)) return null;
   if (!Array.isArray(d.points) || !d.points.every(isTeam)) return null;
   const { teamNames, firstServer, deuceRule = 'advantage' } = d.setup;
   return {

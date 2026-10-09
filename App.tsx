@@ -1,7 +1,9 @@
 import { StatusBar } from 'expo-status-bar';
+import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { HistoryScreen } from './src/screens/HistoryScreen';
 import { MatchScreen } from './src/screens/MatchScreen';
 import { SetupScreen } from './src/screens/SetupScreen';
 import { colors } from './src/screens/theme';
@@ -9,6 +11,7 @@ import { useMatch } from './src/state/useMatch';
 
 export default function App() {
   const match = useMatch();
+  const [showHistory, setShowHistory] = useState(false);
 
   let content;
   if (!match.loaded) {
@@ -18,7 +21,20 @@ export default function App() {
       </View>
     );
   } else if (!match.setup || !match.score) {
-    content = <SetupScreen onStart={match.startMatch} />;
+    content = showHistory ? (
+      <HistoryScreen
+        history={match.history}
+        onBack={() => setShowHistory(false)}
+        onDelete={match.deleteHistoryEntry}
+        onClear={match.clearHistory}
+      />
+    ) : (
+      <SetupScreen
+        onStart={match.startMatch}
+        historyCount={match.history.length}
+        onShowHistory={() => setShowHistory(true)}
+      />
+    );
   } else {
     content = (
       <MatchScreen

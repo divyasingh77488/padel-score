@@ -6,11 +6,15 @@ import { DEUCE_RULES, DeuceRule, MatchSetup, Team } from '../scoring';
 import { DEUCE_RULE_INFO } from './deuceRules';
 import { colors } from './theme';
 
-type Props = { onStart: (setup: MatchSetup) => void };
+type Props = {
+  onStart: (setup: MatchSetup) => void;
+  historyCount: number;
+  onShowHistory: () => void;
+};
 
 const DEFAULT_NAMES = { A: 'Team A', B: 'Team B' };
 
-export function SetupScreen({ onStart }: Props) {
+export function SetupScreen({ onStart, historyCount, onShowHistory }: Props) {
   const [names, setNames] = useState({ A: '', B: '' });
   const [firstServer, setFirstServer] = useState<Team>('A');
   const [deuceRule, setDeuceRule] = useState<DeuceRule>('golden');
@@ -24,7 +28,14 @@ export function SetupScreen({ onStart }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Padel Score</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>Padel Score</Text>
+          <Pressable accessibilityRole="button" onPress={onShowHistory} hitSlop={12}>
+            <Text style={styles.historyLink}>
+              History{historyCount > 0 ? ` (${historyCount})` : ''}
+            </Text>
+          </Pressable>
+        </View>
 
         {(['A', 'B'] as const).map((team) => (
           <View key={team} style={styles.field}>
@@ -130,7 +141,14 @@ export function SetupScreen({ onStart }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background, padding: 24 },
   form: { gap: 12, paddingBottom: 24 },
-  title: { color: colors.text, fontSize: 32, fontWeight: '800', marginVertical: 24 },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginVertical: 24,
+  },
+  historyLink: { color: colors.accent, fontSize: 17, fontWeight: '600' },
+  title: { color: colors.text, fontSize: 32, fontWeight: '800' },
   field: { gap: 6 },
   label: { color: colors.muted, fontSize: 14, fontWeight: '600', textTransform: 'uppercase' },
   input: {
