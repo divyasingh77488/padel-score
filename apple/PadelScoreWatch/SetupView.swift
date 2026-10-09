@@ -12,7 +12,29 @@ struct SetupView: View {
 
   var body: some View {
     List {
-      Section("Teams") {
+      if !model.planned.isEmpty {
+        Section("From your phone") {
+          ForEach(model.planned) { match in
+            Button {
+              model.startPlanned(match)
+            } label: {
+              VStack(alignment: .leading, spacing: 2) {
+                Text(match.setup.teamNames.a)
+                  .foregroundStyle(Theme.color(.a))
+                + Text(" vs ").foregroundStyle(.secondary)
+                + Text(match.setup.teamNames.b)
+                  .foregroundStyle(Theme.color(.b))
+                Text(match.setup.deuceRule.label)
+                  .font(.caption2)
+                  .foregroundStyle(.secondary)
+              }
+              .font(.headline)
+            }
+          }
+        }
+      }
+
+      Section(model.planned.isEmpty ? "Teams" : "Or set up here") {
         TextField("Team 1", text: $nameA)
           .foregroundStyle(Theme.color(.a))
         TextField("Team 2", text: $nameB)

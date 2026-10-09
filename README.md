@@ -4,6 +4,10 @@ Padel Battle is a simple padel match scorekeeper for iOS (Expo / React Native, s
 
 Design: [docs/superpowers/specs/2026-10-08-padel-score-design.md](docs/superpowers/specs/2026-10-08-padel-score-design.md)
 
+**Apple Watch:** a native iPhone + Apple Watch version lives in [`apple/`](apple/README.md):
+set up a match on the iPhone, start and score it on the watch, and see the live score and history
+on the iPhone. The Expo app below is kept for Android.
+
 <p>
   <img src="docs/screenshots/setup.png" width="200" alt="Setup screen">
   <img src="docs/screenshots/match.png" width="200" alt="Match screen">

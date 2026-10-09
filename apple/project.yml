@@ -1,40 +1,78 @@
-# XcodeGen spec for the Apple Watch app. Generate the Xcode project with:
+# XcodeGen spec for the iPhone and Apple Watch apps. Generate the Xcode project with:
 #   brew install xcodegen
 #   cd apple && xcodegen
 # PadelScore.xcodeproj is generated, so it isn't committed; edit this file instead.
 name: PadelScore
 options:
   deploymentTarget:
+    iOS: "17.0"
     watchOS: "10.0"
 packages:
   PadelScoreKit:
     path: PadelScoreKit
+settings:
+  base:
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.0"
+    CODE_SIGN_STYLE: Automatic
+    # Personal team of divyasingh77488@gmail.com (free Apple ID).
+    DEVELOPMENT_TEAM: 38J8F87MS5
+    GENERATE_INFOPLIST_FILE: YES
+    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    INFOPLIST_KEY_CFBundleDisplayName: Padel Battle
 targets:
+  # The iPhone app. It carries the watch app inside it, which is what lets the two talk to
+  # each other (WatchConnectivity). Installing it also installs the watch app.
+  PadelScorePhone:
+    type: application
+    platform: iOS
+    sources:
+      - PadelScorePhone
+      - Shared
+    dependencies:
+      - package: PadelScoreKit
+      - target: PadelScoreWatch
+        embed: true
+        codeSign: true
+        copy:
+          destination: productsDirectory
+          subpath: $(CONTENTS_FOLDER_PATH)/Watch
+    settings:
+      base:
+        PRODUCT_NAME: PadelBattle
+        # Same ID as the earlier Expo app, so this replaces it on the iPhone.
+        PRODUCT_BUNDLE_IDENTIFIER: com.divyasingh.padelscore
+        TARGETED_DEVICE_FAMILY: "1"
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_UIUserInterfaceStyle: Dark
+
   PadelScoreWatch:
     type: application
     platform: watchOS
     sources:
       - PadelScoreWatch
+      - Shared
     dependencies:
       - package: PadelScoreKit
     settings:
       base:
         PRODUCT_NAME: PadelScore
         PRODUCT_BUNDLE_IDENTIFIER: com.divyasingh.padelscore.watch
-        MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: "1"
-        SWIFT_VERSION: "5.0"
         TARGETED_DEVICE_FAMILY: "4"
-        CODE_SIGN_STYLE: Automatic
-        # Personal team of divyasingh77488@gmail.com (free Apple ID).
-        DEVELOPMENT_TEAM: 38J8F87MS5
-        GENERATE_INFOPLIST_FILE: YES
-        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        INFOPLIST_KEY_CFBundleDisplayName: Padel Battle
-        # A watch-only app: installs on the watch without an iPhone app.
         INFOPLIST_KEY_WKApplication: YES
-        INFOPLIST_KEY_WKWatchOnly: YES
+        # Belongs to the iPhone app, but still works on its own when the phone isn't nearby.
+        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: com.divyasingh.padelscore
+        INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp: YES
 schemes:
+  PadelScorePhone:
+    build:
+      targets:
+        PadelScorePhone: all
+    run:
+      config: Release
   PadelScoreWatch:
     build:
       targets:

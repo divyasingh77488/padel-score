@@ -21,6 +21,15 @@ extension DeuceRule {
     }
   }
 
+  /// Short name for segmented pickers.
+  var shortLabel: String {
+    switch self {
+    case .advantage: return "Advantage"
+    case .golden: return "Golden"
+    case .star: return "Star"
+    }
+  }
+
   var explanation: String {
     switch self {
     case .advantage:
