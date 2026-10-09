@@ -63,6 +63,37 @@ open**. Locking the iPhone or switching to another app is fine. If the app is fu
 with the Mac running `npm start`. Your match isn't lost: it's saved on the iPhone and comes back
 when the app reopens.
 
+### Install it as a real app (no Mac or Wi-Fi needed on court)
+
+This builds the app with Xcode and installs it on your iPhone, so it opens from the Home Screen
+like any other app and works offline. It's free with a normal Apple ID, but the install
+**expires after 7 days**; repeat the last step to reinstall.
+
+**One-time setup on your Mac:**
+
+1. Install **Xcode** (free, Mac App Store) and the iPhone platform:
+   `xcodebuild -downloadPlatform iOS`.
+2. In **Xcode → Settings → Accounts**, click **+** and sign in with your Apple ID.
+
+**One-time setup on your iPhone:**
+
+1. Connect it to the Mac with a cable, unlock it and tap **Trust**.
+2. Turn on **Settings → Privacy & Security → Developer Mode** (it appears after connecting to
+   Xcode) and restart when asked.
+
+**Install (and every 7 days to reinstall):** with the iPhone connected and unlocked, run on
+the Mac in the `padel-score` folder:
+
+```bash
+npx expo run:ios --device --configuration Release
+```
+
+Pick your iPhone from the list. If it asks for a **development team**, choose the one with
+your Apple ID. The first build takes several minutes.
+
+The first time the app opens, the iPhone may say the developer isn't trusted: go to
+**Settings → General → VPN & Device Management**, tap your Apple ID and tap **Trust**.
+
 ## How to use it (on your iPhone)
 
 Everything from here on happens on the iPhone.
