@@ -30,7 +30,7 @@ targets:
         DEVELOPMENT_TEAM: 38J8F87MS5
         GENERATE_INFOPLIST_FILE: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        INFOPLIST_KEY_CFBundleDisplayName: Padel Point
+        INFOPLIST_KEY_CFBundleDisplayName: Padel Battle
         # A watch-only app: installs on the watch without an iPhone app.
         INFOPLIST_KEY_WKApplication: YES
         INFOPLIST_KEY_WKWatchOnly: YES

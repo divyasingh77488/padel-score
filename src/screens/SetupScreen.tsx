@@ -29,7 +29,7 @@ export function SetupScreen({ onStart, historyCount, onShowHistory }: Props) {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
         <View style={styles.titleRow}>
-          <Text style={styles.title}>Padel Point</Text>
+          <Text style={styles.title}>Padel Battle</Text>
           <Pressable accessibilityRole="button" onPress={onShowHistory} hitSlop={12}>
             <Text style={styles.historyLink}>
               History{historyCount > 0 ? ` (${historyCount})` : ''}
