@@ -76,6 +76,13 @@ struct MatchView: View {
                 .frame(width: 9, height: 9)
                 .accessibilityLabel("Serving")
             }
+            // One diamond per set won.
+            ForEach(0..<score.setsWon[team], id: \.self) { _ in
+              Image(systemName: "diamond.fill")
+                .font(.system(size: 9, weight: .bold))
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(score.setsWon[team]) sets won")
             Spacer(minLength: 4)
             Text("\(score.currentSet[team])")
               .font(.system(.title3, design: .rounded).weight(.heavy))
@@ -101,12 +108,9 @@ struct MatchView: View {
     .accessibilityLabel("Point \(setup.teamNames[team])")
   }
 
-  /// Which set is being played, sets won, and the tiebreak / deciding-point label.
+  /// Which set is being played, plus the tiebreak / deciding-point label.
   private var statusLine: String {
     var parts = ["SET \(score.completedSets.count + 1)"]
-    if !score.completedSets.isEmpty {
-      parts.append("Sets \(score.setsWon.a)–\(score.setsWon.b)")
-    }
     if case .tiebreak = score.currentGame {
       parts.append("Tiebreak")
     } else if score.decidingPoint {
