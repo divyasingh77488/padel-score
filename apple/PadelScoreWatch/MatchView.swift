@@ -65,7 +65,6 @@ struct MatchView: View {
       ZStack {
         Theme.color(team)
         VStack(spacing: 0) {
-          // Name and serve dot on the left, this team's games in the set on the right.
           HStack(spacing: 4) {
             Text(setup.teamNames[team])
               .font(.footnote.weight(.semibold))
@@ -76,31 +75,18 @@ struct MatchView: View {
                 .frame(width: 9, height: 9)
                 .accessibilityLabel("Serving")
             }
-            // One diamond per set won.
-            ForEach(0..<score.setsWon[team], id: \.self) { _ in
-              Image(systemName: "diamond.fill")
-                .font(.system(size: 9, weight: .bold))
-            }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(score.setsWon[team]) sets won")
-            Spacer(minLength: 4)
-            Text("\(score.currentSet[team])")
-              .font(.system(.title3, design: .rounded).weight(.heavy))
-              .monospacedDigit()
-              .foregroundStyle(.black)
-              .padding(.horizontal, 8)
-              .background(Capsule().fill(.white))
-              .accessibilityLabel("\(score.currentSet[team]) games")
           }
-          .padding(.horizontal, 10)
           Text(pointsText(team))
-            .font(.system(size: 46, weight: .heavy, design: .rounded))
+            .font(.system(size: 44, weight: .heavy, design: .rounded))
             .monospacedDigit()
             .minimumScaleFactor(0.5)
             .lineLimit(1)
-            .frame(maxHeight: .infinity)
+          if let label = gameLabel {
+            Text(label)
+              .font(.caption2.weight(.semibold))
+              .opacity(0.85)
+          }
         }
-        .padding(.vertical, 4)
         .foregroundStyle(.white)
       }
     }
@@ -108,27 +94,39 @@ struct MatchView: View {
     .accessibilityLabel("Point \(setup.teamNames[team])")
   }
 
-  /// Which set is being played, plus the tiebreak / deciding-point label.
-  private var statusLine: String {
-    var parts = ["SET \(score.completedSets.count + 1)"]
-    if case .tiebreak = score.currentGame {
-      parts.append("Tiebreak")
-    } else if score.decidingPoint {
-      parts.append(setup.deuceRule.label)
-    }
-    return parts.joined(separator: " · ")
+  /// "Tiebreak", or the deciding-point rule name when the next point wins the game.
+  private var gameLabel: String? {
+    if case .tiebreak = score.currentGame { return "Tiebreak" }
+    return score.decidingPoint ? setup.deuceRule.label : nil
   }
 
+  /// Mini scoreboard like the phone's: a row per team, finished sets then the current set.
   private var scoreStrip: some View {
-    Text(statusLine)
-      .font(.footnote.weight(.bold))
-      .monospacedDigit()
-      .lineLimit(1)
-      .minimumScaleFactor(0.7)
-      .foregroundStyle(score.decidingPoint ? Theme.accent : .white)
-      .frame(maxWidth: .infinity)
-      .padding(.vertical, 3)
-      .background(.black)
+    VStack(spacing: 1) {
+      boardRow(.a)
+      boardRow(.b)
+    }
+    .padding(.horizontal, 10)
+    .padding(.vertical, 3)
+    .background(Color(white: 0.12))
+  }
+
+  private func boardRow(_ team: Team) -> some View {
+    HStack(spacing: 8) {
+      Text(setup.teamNames[team])
+        .font(.caption2.weight(.semibold))
+        .foregroundStyle(.secondary)
+        .lineLimit(1)
+        .frame(maxWidth: .infinity, alignment: .leading)
+      ForEach(Array(score.completedSets.enumerated()), id: \.offset) { _, set in
+        Text("\(set.games[team])")
+          .foregroundStyle(set.games[team] > set.games[team.other] ? Color.white : Color.secondary)
+      }
+      Text("\(score.currentSet[team])")
+        .foregroundStyle(Theme.accent)
+    }
+    .font(.system(.footnote, design: .rounded).weight(.bold))
+    .monospacedDigit()
   }
 }
 
