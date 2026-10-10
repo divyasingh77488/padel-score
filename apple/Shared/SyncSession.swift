@@ -14,6 +14,10 @@ import WatchConnectivity
 ///
 /// The latest value is kept until Apple accepts it, and sent again whenever the connection
 /// changes (watch paired, watch app installed, back in range) or the app comes to the front.
+///
+/// As a second route, the watch asks the phone for the next match whenever it opens (iOS wakes
+/// the phone app in the background to answer), and the phone sends it straight away while the
+/// watch app is open.
 @MainActor
 final class SyncSession: NSObject, ObservableObject {
   static let shared = SyncSession()
@@ -30,7 +34,11 @@ final class SyncSession: NSObject, ObservableObject {
   private enum Key {
     static let next = "next"
     static let finished = "finished"
+    static let request = "request"
   }
+
+  /// Phone: where the next match is kept for answering the watch, even from a background launch.
+  private nonisolated static let nextDefaultsKey = "padel-battle/sync-next"
 
   /// Watch: called with the next match set up on the phone, or nil.
   var onNextMatch: ((PlannedMatch?) -> Void)?
@@ -52,8 +60,16 @@ final class SyncSession: NSObject, ObservableObject {
 
   /// Phone: the match the watch should offer next (nil to clear it).
   func sendNextMatch(_ match: PlannedMatch?) {
-    pendingContext = [Key.next: SyncCoding.encode(match)]
+    let data = SyncCoding.encode(match)
+    UserDefaults.standard.set(data, forKey: Self.nextDefaultsKey)
+    pendingContext = [Key.next: data]
     flush()
+    #if os(iOS)
+      // Straight to the watch app if it's open right now.
+      if let session, session.activationState == .activated, session.isReachable {
+        session.sendMessage([Key.next: data], replyHandler: nil, errorHandler: nil)
+      }
+    #endif
   }
 
   /// Watch: the recently finished matches, newest first.
@@ -73,6 +89,20 @@ final class SyncSession: NSObject, ObservableObject {
     let context = session.receivedApplicationContext
     if !context.isEmpty { handle(context: context) }
     flush()
+    requestNextMatch()
+  }
+
+  /// Watch: asks the phone for the next match. iOS wakes the phone app to answer if needed.
+  private func requestNextMatch() {
+    #if os(watchOS)
+      guard let session, session.activationState == .activated, session.isReachable else { return }
+      session.sendMessage(
+        [Key.request: Key.next],
+        replyHandler: { reply in
+          Task { @MainActor in self.handle(context: reply) }
+        },
+        errorHandler: nil)
+    #endif
   }
 
   private func flush() {
@@ -110,6 +140,7 @@ final class SyncSession: NSObject, ObservableObject {
     if let context = session?.receivedApplicationContext, !context.isEmpty {
       handle(context: context)
     }
+    requestNextMatch()
   }
 
   fileprivate func handle(context: [String: Any]) {
@@ -140,7 +171,31 @@ extension SyncSession: WCSessionDelegate {
   }
 
   nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
-    Task { @MainActor in self.flush() }
+    Task { @MainActor in
+      self.flush()
+      self.requestNextMatch()
+    }
+  }
+
+  /// Watch: the next match sent straight from the phone.
+  nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
+    let context = message
+    Task { @MainActor in self.handle(context: context) }
+  }
+
+  /// Phone: the watch asking for the next match.
+  nonisolated func session(
+    _ session: WCSession, didReceiveMessage message: [String: Any],
+    replyHandler: @escaping ([String: Any]) -> Void
+  ) {
+    guard message[Key.request] as? String == Key.next else {
+      replyHandler([:])
+      return
+    }
+    let data =
+      UserDefaults.standard.data(forKey: Self.nextDefaultsKey)
+      ?? SyncCoding.encode(PlannedMatch?.none)
+    replyHandler([Key.next: data])
   }
 
   #if os(iOS)
