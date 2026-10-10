@@ -59,6 +59,12 @@ final class PhoneStore: ObservableObject {
     saveNext()
   }
 
+  /// Sends the next match to the watch again, in case it didn't get through.
+  func resendToWatch() {
+    sync.sendNextMatch(next)
+    sync.refresh()
+  }
+
   // MARK: Playing on the phone
 
   func playOnPhone(_ setup: MatchSetup) {

@@ -3,6 +3,7 @@ import SwiftUI
 
 struct HomeView: View {
   @ObservedObject var store: PhoneStore
+  @ObservedObject private var sync = SyncSession.shared
   @State private var showNewMatch = false
 
   var body: some View {
@@ -18,8 +19,15 @@ struct HomeView: View {
                   .font(.caption)
                   .foregroundStyle(.secondary)
               }
+              if let problem = watchProblem {
+                Label(problem, systemImage: "exclamationmark.triangle.fill")
+                  .font(.caption)
+                  .foregroundStyle(.yellow)
+              }
               HStack {
                 Button("Play on phone") { store.playNextOnPhone() }
+                  .buttonStyle(.bordered)
+                Button("Send again") { store.resendToWatch() }
                   .buttonStyle(.bordered)
                 Spacer()
                 Button("Remove", role: .destructive) { store.clearNext() }
@@ -51,6 +59,14 @@ struct HomeView: View {
           )
         }
 
+        if store.next == nil, let problem = watchProblem {
+          Section {
+            Label(problem, systemImage: "exclamationmark.triangle.fill")
+              .font(.caption)
+              .foregroundStyle(.yellow)
+          }
+        }
+
         Section {
           NavigationLink {
             HistoryView(store: store)
@@ -64,6 +80,19 @@ struct HomeView: View {
       .sheet(isPresented: $showNewMatch) {
         NewMatchView(store: store)
       }
+    }
+  }
+}
+
+extension HomeView {
+  /// Why matches can't reach the watch right now, or nil when the link is fine.
+  fileprivate var watchProblem: String? {
+    switch sync.status {
+    case .ready, .connecting: return nil
+    case .noWatch: return "No Apple Watch is paired with this iPhone."
+    case .watchAppMissing:
+      return "Padel Battle isn't installed on your watch. Install it from the Watch app on this iPhone, or run the watch app from Xcode."
+    case .failed(let message): return "Couldn't send to the watch: \(message)"
     }
   }
 }

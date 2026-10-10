@@ -20,6 +20,8 @@ final class MatchModel: ObservableObject {
   /// The setup of the most recent match, to prefill the setup screen.
   private(set) var lastSetup: MatchSetup
 
+  /// The latest match received from the phone, shown as `next` unless it was started here.
+  private var fromPhone: PlannedMatch?
   /// The id of the phone's match already started here, hidden until the phone sends a new one.
   private var startedNextId: UUID?
   /// Recently finished matches, newest first, waiting for (or already seen by) the phone.
@@ -65,8 +67,7 @@ final class MatchModel: ObservableObject {
   /// Starts the match set up on the phone. It keeps the same id, so the phone can clear it.
   func startNext() {
     guard let match = next else { return }
-    startedNextId = match.id
-    defaults.set(SyncCoding.encode(match.id), forKey: Self.startedNextKey)
+    setStartedNextId(match.id)
     next = nil
     startMatch(match.setup, id: match.id)
   }
@@ -124,8 +125,18 @@ final class MatchModel: ObservableObject {
 
   /// Clears the match without sending it to the phone.
   func discard() {
+    // A discarded match from the phone is offered again, as the phone still lists it.
+    if let id = current?.id, id == startedNextId {
+      setStartedNextId(nil)
+      next = fromPhone
+    }
     current = nil
     saveCurrent()
+  }
+
+  /// Reconnects to the phone, e.g. when the app comes to the front.
+  func refreshSync() {
+    sync.refresh()
   }
 
   private func saveCurrent() {
@@ -137,7 +148,17 @@ final class MatchModel: ObservableObject {
     defaults.removeObject(forKey: Self.legacyMatchKey)
   }
 
+  private func setStartedNextId(_ id: UUID?) {
+    startedNextId = id
+    if let id {
+      defaults.set(SyncCoding.encode(id), forKey: Self.startedNextKey)
+    } else {
+      defaults.removeObject(forKey: Self.startedNextKey)
+    }
+  }
+
   private func receiveNext(_ match: PlannedMatch?) {
+    fromPhone = match
     next = match?.id == startedNextId ? nil : match
   }
 }

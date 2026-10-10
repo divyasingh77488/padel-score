@@ -11,9 +11,21 @@ import WatchConnectivity
 ///   seen, so re-delivery is harmless and deleted history entries don't come back.
 ///
 /// Nothing is sent while a match is being played; the result syncs when it ends.
+///
+/// The latest value is kept until Apple accepts it, and sent again whenever the connection
+/// changes (watch paired, watch app installed, back in range) or the app comes to the front.
 @MainActor
-final class SyncSession: NSObject {
+final class SyncSession: NSObject, ObservableObject {
   static let shared = SyncSession()
+
+  /// How the link to the other device looks, for the phone to show when something is wrong.
+  enum Status: Equatable {
+    case connecting
+    case noWatch
+    case watchAppMissing
+    case ready
+    case failed(String)
+  }
 
   private enum Key {
     static let next = "next"
@@ -25,6 +37,9 @@ final class SyncSession: NSObject {
   /// Phone: called with the watch's recently finished matches.
   var onFinishedMatches: (([MatchRecord]) -> Void)?
 
+  @Published private(set) var status: Status = .connecting
+
+  /// The latest value to send, kept until Apple accepts it.
   private var pendingContext: [String: Any]?
 
   private var session: WCSession? { WCSession.isSupported() ? WCSession.default : nil }
@@ -37,30 +52,60 @@ final class SyncSession: NSObject {
 
   /// Phone: the match the watch should offer next (nil to clear it).
   func sendNextMatch(_ match: PlannedMatch?) {
-    updateContext([Key.next: SyncCoding.encode(match)])
+    pendingContext = [Key.next: SyncCoding.encode(match)]
+    flush()
   }
 
   /// Watch: the recently finished matches, newest first.
   func sendFinishedMatches(_ records: [MatchRecord]) {
-    updateContext([Key.finished: SyncCoding.encode(records)])
+    pendingContext = [Key.finished: SyncCoding.encode(records)]
+    flush()
   }
 
-  private func updateContext(_ context: [String: Any]) {
+  /// Reconnects and sends anything still waiting. Call when the app comes to the front.
+  func refresh() {
+    guard let session else { return }
+    if session.activationState != .activated {
+      activate()
+      return
+    }
+    // Read anything the other device sent that didn't arrive through the delegate.
+    let context = session.receivedApplicationContext
+    if !context.isEmpty { handle(context: context) }
+    flush()
+  }
+
+  private func flush() {
     guard let session, session.activationState == .activated else {
-      pendingContext = context
+      status = .connecting
       return
     }
     #if os(iOS)
-      guard session.isPaired, session.isWatchAppInstalled else { return }
+      guard session.isPaired else {
+        status = .noWatch
+        return
+      }
+      guard session.isWatchAppInstalled else {
+        status = .watchAppMissing
+        return
+      }
     #endif
-    try? session.updateApplicationContext(context)
+    guard let context = pendingContext else {
+      status = .ready
+      return
+    }
+    do {
+      try session.updateApplicationContext(context)
+      pendingContext = nil
+      status = .ready
+    } catch {
+      // Kept in pendingContext and tried again when the connection changes.
+      status = .failed(error.localizedDescription)
+    }
   }
 
   fileprivate func didActivate() {
-    if let pending = pendingContext {
-      pendingContext = nil
-      updateContext(pending)
-    }
+    flush()
     // Pick up whatever the other device sent while this app wasn't running.
     if let context = session?.receivedApplicationContext, !context.isEmpty {
       handle(context: context)
@@ -94,7 +139,16 @@ extension SyncSession: WCSessionDelegate {
     Task { @MainActor in self.handle(context: context) }
   }
 
+  nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
+    Task { @MainActor in self.flush() }
+  }
+
   #if os(iOS)
+    /// The watch was paired or unpaired, or the watch app installed or removed.
+    nonisolated func sessionWatchStateDidChange(_ session: WCSession) {
+      Task { @MainActor in self.flush() }
+    }
+
     nonisolated func sessionDidBecomeInactive(_ session: WCSession) {}
 
     nonisolated func sessionDidDeactivate(_ session: WCSession) {
