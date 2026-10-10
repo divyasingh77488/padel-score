@@ -46,6 +46,8 @@ final class SyncSession: NSObject, ObservableObject {
   var onFinishedMatches: (([MatchRecord]) -> Void)?
 
   @Published private(set) var status: Status = .connecting
+  /// Watch: what happened the last time it asked the phone for the next match.
+  @Published private(set) var phoneCheck: String?
 
   /// The latest value to send, kept until Apple accepts it.
   private var pendingContext: [String: Any]?
@@ -93,15 +95,31 @@ final class SyncSession: NSObject, ObservableObject {
   }
 
   /// Watch: asks the phone for the next match. iOS wakes the phone app to answer if needed.
-  private func requestNextMatch() {
+  func requestNextMatch() {
     #if os(watchOS)
-      guard let session, session.activationState == .activated, session.isReachable else { return }
+      guard let session, session.activationState == .activated else {
+        phoneCheck = "Still connecting…"
+        return
+      }
+      guard session.isReachable else {
+        phoneCheck = "iPhone not reachable. Is Bluetooth on and the phone nearby?"
+        return
+      }
+      phoneCheck = "Asking your iPhone…"
       session.sendMessage(
         [Key.request: Key.next],
         replyHandler: { reply in
-          Task { @MainActor in self.handle(context: reply) }
+          Task { @MainActor in
+            let data = reply[Key.next] as? Data
+            let found = data.flatMap { SyncCoding.decode(PlannedMatch.self, from: $0) } != nil
+            self.phoneCheck = found ? nil : "No match waiting on your iPhone."
+            self.handle(context: reply)
+          }
         },
-        errorHandler: nil)
+        errorHandler: { error in
+          let message = error.localizedDescription
+          Task { @MainActor in self.phoneCheck = "Couldn't reach the iPhone app: \(message)" }
+        })
     #endif
   }
 

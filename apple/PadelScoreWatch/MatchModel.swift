@@ -139,6 +139,11 @@ final class MatchModel: ObservableObject {
     sync.refresh()
   }
 
+  /// Asks the phone for the next match, e.g. from a button.
+  func checkPhone() {
+    sync.requestNextMatch()
+  }
+
   private func saveCurrent() {
     if let current {
       defaults.set(SyncCoding.encode(current), forKey: Self.matchKey)

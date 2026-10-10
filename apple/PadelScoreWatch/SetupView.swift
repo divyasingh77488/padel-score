@@ -3,6 +3,7 @@ import SwiftUI
 
 struct SetupView: View {
   @ObservedObject var model: MatchModel
+  @ObservedObject private var sync = SyncSession.shared
 
   @State private var nameA = ""
   @State private var nameB = ""
@@ -28,6 +29,20 @@ struct SetupView: View {
                 .foregroundStyle(.secondary)
             }
             .font(.headline)
+          }
+        }
+      }
+
+      if model.next == nil {
+        Section {
+          Button {
+            model.checkPhone()
+          } label: {
+            Label("Check phone for a match", systemImage: "iphone.and.arrow.forward")
+          }
+        } footer: {
+          if let check = sync.phoneCheck {
+            Text(check)
           }
         }
       }
