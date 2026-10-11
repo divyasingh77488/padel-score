@@ -2,6 +2,13 @@
 
 A padel scorekeeper for iPhone and Apple Watch.
 
+<p>
+  <img src="docs/screenshots/setup.png" width="200" alt="Setup screen">
+  <img src="docs/screenshots/match.png" width="200" alt="Match screen">
+  <img src="docs/screenshots/tiebreak.png" width="200" alt="Tiebreak">
+  <img src="docs/screenshots/match-over.png" width="200" alt="Match over">
+</p>
+
 ## What it does
 
 1. **On the iPhone:** tap **New match**. Enter the team names, choose who serves first and the
