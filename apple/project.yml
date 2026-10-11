@@ -48,6 +48,8 @@ targets:
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
         INFOPLIST_KEY_UIUserInterfaceStyle: Dark
+        # Shown when the app asks to read the calendar for court bookings.
+        INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription: Padel Battle reads your calendar to find upcoming padel bookings, so you can add one to a match. Nothing leaves your phone.
 
   PadelScoreWatch:
     type: application

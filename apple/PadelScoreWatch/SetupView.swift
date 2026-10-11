@@ -24,6 +24,11 @@ struct SetupView: View {
                 + Text(" vs ").foregroundStyle(.secondary)
                 + Text(match.setup.teamNames.b)
                 .foregroundStyle(Theme.color(.b))
+              if let booking = match.booking {
+                Text(booking.summary)
+                  .font(.caption2)
+                  .foregroundStyle(Theme.accent)
+              }
               Text("\(match.setup.deuceRule.label) · Tap to start")
                 .font(.caption2)
                 .foregroundStyle(.secondary)

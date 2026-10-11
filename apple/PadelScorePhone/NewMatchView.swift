@@ -10,10 +10,26 @@ struct NewMatchView: View {
   @State private var firstServer: Team = .a
   @State private var deuceRule: DeuceRule = .golden
   @State private var loaded = false
+  @StateObject private var calendar = CalendarBookings()
+  @State private var bookingId: String?
+  @State private var showAllEvents = false
+  @State private var autoPicked = false
 
   var body: some View {
     NavigationStack {
       Form {
+        Section {
+          bookingRows
+        } header: {
+          Text("Court booking")
+        } footer: {
+          Text(
+            calendar.access == .granted
+              ? "Tap a booking to add it to the match. Its time and club show on the watch and in History."
+              : "Finds your padel bookings (for example from Playtomic) in your calendar for the next 2 weeks. Nothing leaves your phone."
+          )
+        }
+
         Section("Teams") {
           TextField("Team A", text: $nameA)
             .foregroundStyle(Theme.color(.a))
@@ -54,7 +70,7 @@ struct NewMatchView: View {
 
         Section {
           Button {
-            store.sendToWatch(setup)
+            store.sendToWatch(setup, booking: selectedBooking)
             dismiss()
           } label: {
             Label("Send to watch", systemImage: "applewatch")
@@ -67,7 +83,7 @@ struct NewMatchView: View {
           .listRowBackground(Color.clear)
 
           Button {
-            store.playOnPhone(setup)
+            store.playOnPhone(setup, booking: selectedBooking)
             dismiss()
           } label: {
             Text("Play on phone now")
@@ -92,6 +108,71 @@ struct NewMatchView: View {
         firstServer = last.firstServer
         deuceRule = last.deuceRule
       }
+      .task {
+        if calendar.access == .granted { await loadBookings() }
+      }
+    }
+  }
+
+  @ViewBuilder private var bookingRows: some View {
+    switch calendar.access {
+    case .notAsked:
+      Button {
+        Task { await loadBookings() }
+      } label: {
+        Label("Find my bookings in Calendar", systemImage: "calendar.badge.plus")
+      }
+    case .denied:
+      Text("Calendar access is off for Padel Battle.")
+        .foregroundStyle(.secondary)
+      Button("Turn it on in Settings") { calendar.openSettings() }
+    case .granted:
+      let shown = showAllEvents ? calendar.events : calendar.events.filter(\.looksLikePadel)
+      if shown.isEmpty {
+        Text(showAllEvents ? "No events in the next 2 weeks." : "No padel bookings in the next 2 weeks.")
+          .foregroundStyle(.secondary)
+      }
+      ForEach(shown) { event in
+        Button {
+          bookingId = bookingId == event.id ? nil : event.id
+        } label: {
+          HStack {
+            VStack(alignment: .leading, spacing: 2) {
+              Text(event.booking.title)
+                .foregroundStyle(.primary)
+              Text(bookingDetail(event.booking))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+            Spacer()
+            if bookingId == event.id {
+              Image(systemName: "checkmark")
+                .foregroundStyle(Theme.accent)
+            }
+          }
+        }
+      }
+      Toggle("Show all events", isOn: $showAllEvents)
+    }
+  }
+
+  private func bookingDetail(_ booking: Booking) -> String {
+    let when = Booking.dayAndTime(booking.start)
+    return booking.placeOrTitle == booking.title ? when : "\(when) · \(booking.placeOrTitle)"
+  }
+
+  private var selectedBooking: Booking? {
+    calendar.events.first { $0.id == bookingId }?.booking
+  }
+
+  /// Reads the calendar and, the first time, picks the next padel booking within a day.
+  private func loadBookings() async {
+    await calendar.load()
+    guard !autoPicked else { return }
+    autoPicked = true
+    let soon = Date().addingTimeInterval(24 * 3600)
+    if let next = calendar.events.first(where: { $0.looksLikePadel && $0.booking.start < soon }) {
+      bookingId = next.id
     }
   }
 

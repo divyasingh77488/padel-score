@@ -40,10 +40,18 @@ private struct HistoryRow: View {
     return text.isEmpty ? "No games yet" : text
   }
 
+  /// The date, plus the club when the match came from a calendar booking.
+  private var dateLine: String {
+    let date = (record.finishedAt ?? record.startedAt).formatted(
+      date: .abbreviated, time: .shortened)
+    guard let booking = record.booking else { return date }
+    return "\(date) · \(booking.placeOrTitle)"
+  }
+
   var body: some View {
     let score = record.score
     VStack(alignment: .leading, spacing: 4) {
-      Text((record.finishedAt ?? record.startedAt).formatted(date: .abbreviated, time: .shortened))
+      Text(dateLine)
         .font(.caption)
         .foregroundStyle(.secondary)
       if let winner = score.winner {

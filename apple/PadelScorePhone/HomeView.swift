@@ -15,6 +15,11 @@ struct HomeView: View {
               VStack(alignment: .leading, spacing: 2) {
                 TeamsText(names: match.setup.teamNames)
                   .font(.title3.weight(.bold))
+                if let booking = match.booking {
+                  Label(booking.summary, systemImage: "calendar")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.accent)
+                }
                 Text(match.setup.deuceRule.label)
                   .font(.caption)
                   .foregroundStyle(.secondary)

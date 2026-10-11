@@ -57,8 +57,8 @@ final class MatchModel: ObservableObject {
   var points: [Team] { current?.points ?? [] }
   var score: MatchScore? { current?.score }
 
-  func startMatch(_ newSetup: MatchSetup, id: UUID = UUID()) {
-    current = MatchRecord(id: id, setup: newSetup)
+  func startMatch(_ newSetup: MatchSetup, id: UUID = UUID(), booking: Booking? = nil) {
+    current = MatchRecord(id: id, setup: newSetup, booking: booking)
     lastSetup = newSetup
     defaults.set(try? JSONEncoder().encode(newSetup), forKey: Self.lastSetupKey)
     saveCurrent()
@@ -69,7 +69,7 @@ final class MatchModel: ObservableObject {
     guard let match = next else { return }
     setStartedNextId(match.id)
     next = nil
-    startMatch(match.setup, id: match.id)
+    startMatch(match.setup, id: match.id, booking: match.booking)
   }
 
   func addPoint(_ team: Team) {

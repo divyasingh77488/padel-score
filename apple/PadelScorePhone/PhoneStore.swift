@@ -48,9 +48,9 @@ final class PhoneStore: ObservableObject {
   // MARK: The next match for the watch
 
   /// Sets the match the watch offers next, replacing any previous one.
-  func sendToWatch(_ setup: MatchSetup) {
+  func sendToWatch(_ setup: MatchSetup, booking: Booking? = nil) {
     remember(setup)
-    next = PlannedMatch(setup: setup)
+    next = PlannedMatch(setup: setup, booking: booking)
     saveNext()
   }
 
@@ -67,9 +67,9 @@ final class PhoneStore: ObservableObject {
 
   // MARK: Playing on the phone
 
-  func playOnPhone(_ setup: MatchSetup) {
+  func playOnPhone(_ setup: MatchSetup, booking: Booking? = nil) {
     remember(setup)
-    current = MatchRecord(setup: setup)
+    current = MatchRecord(setup: setup, booking: booking)
     saveCurrent()
   }
 
@@ -77,7 +77,7 @@ final class PhoneStore: ObservableObject {
   func playNextOnPhone() {
     guard let match = next else { return }
     clearNext()
-    current = MatchRecord(id: match.id, setup: match.setup)
+    current = MatchRecord(id: match.id, setup: match.setup, booking: match.booking)
     saveCurrent()
   }
 

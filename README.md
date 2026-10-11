@@ -11,8 +11,9 @@ A padel scorekeeper for iPhone and Apple Watch.
 
 ## What it does
 
-1. **On the iPhone:** tap **New match**. Enter the team names, choose who serves first and the
-   rule at 40–40, then tap **Send to watch**.
+1. **On the iPhone:** tap **New match**. Pick your court booking from your calendar (for example
+   from Playtomic), enter the team names, choose who serves first and the rule at 40–40, then tap
+   **Send to watch**.
 2. **On the watch:** open Padel Battle and tap the match under **From your phone**. If it isn't
    there, tap **Check phone for a match**. Tap the top or bottom half of the screen to give that
    team the point. **Undo** takes back the last point.

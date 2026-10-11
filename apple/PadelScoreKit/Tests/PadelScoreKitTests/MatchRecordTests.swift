@@ -75,4 +75,26 @@ final class MatchRecordTests: XCTestCase {
     XCTAssertNil(SyncCoding.decode(MatchRecord.self, from: nil))
     XCTAssertNil(SyncCoding.decode(MatchRecord.self, from: Data("nope".utf8)))
   }
+
+  func testBookingKeywordsMatchPadelEvents() {
+    XCTAssertTrue(Booking.looksLikePadel(title: "Padel at Club X", location: nil, notes: nil))
+    XCTAssertTrue(Booking.looksLikePadel(title: "PÁDEL", location: nil, notes: nil))
+    XCTAssertTrue(Booking.looksLikePadel(title: "Match", location: nil, notes: "Booked via Playtomic"))
+    XCTAssertFalse(Booking.looksLikePadel(title: "Dentist", location: "High Street", notes: nil))
+  }
+
+  func testBookingPlaceUsesFirstLineOfLocation() {
+    let booking = Booking(title: "Padel", place: "Club X\n1 High Street", start: Date())
+    XCTAssertEqual(booking.placeOrTitle, "Club X")
+    XCTAssertEqual(Booking(title: "Padel", place: " ", start: Date()).placeOrTitle, "Padel")
+  }
+
+  func testRecordsSavedWithoutBookingStillDecode() throws {
+    let old = MatchRecord(setup: setup, points: [.a])
+    var json = try XCTUnwrap(
+      JSONSerialization.jsonObject(with: SyncCoding.encode(old)) as? [String: Any])
+    json.removeValue(forKey: "booking")
+    let data = try JSONSerialization.data(withJSONObject: json)
+    XCTAssertEqual(SyncCoding.decode(MatchRecord.self, from: data)?.id, old.id)
+  }
 }
