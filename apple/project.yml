@@ -21,6 +21,8 @@ settings:
     GENERATE_INFOPLIST_FILE: YES
     ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     INFOPLIST_KEY_CFBundleDisplayName: Padel Battle
+    # No encryption beyond Apple's own, so App Store Connect doesn't ask about export compliance.
+    INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
 targets:
   # The iPhone app. It carries the watch app inside it, which is what lets the two talk to
   # each other (WatchConnectivity). Installing it also installs the watch app.
